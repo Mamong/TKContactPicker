@@ -73,6 +73,6 @@ Our works
 ScreenShot
 ====================
 
-![](https://raw.github.com/Mamong/TKContactsPicker/master/show.gif) 
+![](https://github.com/Mamong/TKContactsPicker/raw/master/show.gif) 
 =======
 # TKContactPicker
