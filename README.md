@@ -73,6 +73,6 @@ Our works
 ScreenShot
 ====================
 
-<img src="https://raw.github.com/qnibus/TKContactsMultiPicker/master/Screenshot1.png" alt="Tabko Contact Multi Picker" /> &nbsp; <img src="https://raw.github.com/qnibus/TKContactsMultiPicker/master/Screenshot2.png" alt="Tabko Contact Multi Picker" />
+<img src="https://raw.github.com/qnibus/TKContactsMultiPicker/master/show.gif" alt="Tabko Contact Picker" /> &nbsp; 
 =======
 # TKContactPicker
