@@ -1,15 +1,15 @@
 Feature
 ====================
+A system like contact custom implementation based on Jongtae Ahn multi-selection version
 
 Simple contacts multi picker for iOS (Non ARC).
 This is customizable, simple, fast controller for contacts.
 iOS6 Update patch (Privacy settings & Retina 4inch)
 
 <ul>
-    <li>Supported iOS6</li>
-    <li>Non ARC</li>
+    <li>Supported iOS7</li>
+    <li>ARC</li>
     <li>Completed memory leak test</li>
-    <li>Person multi select</li>
     <li>Group select</li>
     <li>Supported LocalizedIndexedCollation</li>
 </ul>
@@ -74,3 +74,5 @@ ScreenShot
 ====================
 
 <img src="https://raw.github.com/qnibus/TKContactsMultiPicker/master/Screenshot1.png" alt="Tabko Contact Multi Picker" /> &nbsp; <img src="https://raw.github.com/qnibus/TKContactsMultiPicker/master/Screenshot2.png" alt="Tabko Contact Multi Picker" />
+=======
+# TKContactPicker
