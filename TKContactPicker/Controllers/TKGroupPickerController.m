@@ -4,15 +4,17 @@
 //
 //  Created by Jongtae Ahn on 12. 9. 1..
 //  Copyright (c) 2012년 TABKO Inc. All rights reserved.
-//
 
-#import "TKPeoplePickerController.h"
+//  Altered by Marco       on 15. 11.2..
+//  Copyright (c) 2015 ET Inc. All rights reserved.
+
+#import "TKPeoplePickerNavigationController.h"
 #import "TKGroupPickerController.h"
 #import "TKContactsPickerController.h"
-#import "TKGroup.h"
 
 @interface TKGroupPickerController (){
-    NSArray *cpsGroups;
+    NSMutableSet *selectValueSet;
+    
 }
 
 @end
@@ -37,10 +39,9 @@
         group.membersCount = (int)[(__bridge NSArray*)currentGroupCount count];
         
 		[groupsTemp addObject:group];
-        //[group release];
 
-        CFRelease(currentGroupCount);
-        CFRelease(groupName);
+        if(currentGroupCount) CFRelease(currentGroupCount);
+        if(groupName) CFRelease(groupName);
     }
     if (allGroups) CFRelease(allGroups);
         
@@ -61,6 +62,7 @@
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
         self.title = NSLocalizedString(@"Groups", nil);
+        selectValueSet = [NSMutableSet setWithObject:@"0-0"];
     }
     return self;
 }
@@ -71,8 +73,6 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
-    cpsGroups = @[@"All CPS",@"Work",@"Home"];
     
     [self.navigationItem setLeftBarButtonItem:[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(addGroup:)]];
     [self.navigationItem setRightBarButtonItem:[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(doneAction:)]];
@@ -97,8 +97,7 @@
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	//return 1 + ([_groups count] > 0 ? 1 : 0);
-    return 3;
+    return 1 + ([_groups count] > 0 ? 1 : 0);
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
@@ -108,25 +107,12 @@
         case 0: {
             rowNumber = 1;
         } break;
-        case 1: {
-            rowNumber = [cpsGroups count];
-        } break;
         default: {
-            rowNumber = 1;
+            rowNumber = [_groups count];
         } break;
     }
     return rowNumber;
 }
-
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
-{
-    if (section==1) {
-        return @"CPS";
-    }else if(section == 2)
-        return @"ON MY IPHONE";
-    return nil;
-}
-
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
@@ -134,52 +120,38 @@
     cell.selectionStyle = UITableViewCellSelectionStyleBlue;
     cell.textLabel.adjustsFontSizeToFitWidth = YES;
     
-    if (YES) {
-        cell.accessoryType = UITableViewCellAccessoryCheckmark;
-    }else{
-        cell.accessoryType = UITableViewCellAccessoryNone;
-    }
-    
     switch (indexPath.section) {
         case 0: {
-            cell.textLabel.text = NSLocalizedString(@"Show All Contacts", nil);
-            cell.accessoryType = UITableViewCellAccessoryNone;
+            //cell.textLabel.text = NSLocalizedString(@"All Contacts", nil);
+            cell.textLabel.text = [NSString stringWithFormat:@"All Contacts (%i)", (int)ABAddressBookGetPersonCount(_addressbook)];
         } break;
-        case 1:{
-            
-            cell.textLabel.text = [cpsGroups objectAtIndex:indexPath.row];
-            cell.detailTextLabel.text = nil;
-        }break;
-        case 2:{
-            cell.textLabel.text = NSLocalizedString(@"All on My iPhone", nil);
-            cell.detailTextLabel.text = [NSString stringWithFormat:@"%i", (int)ABAddressBookGetPersonCount(_addressbook)];
-        }break;
         default: {
             TKGroup *group = [self.groups objectAtIndex:indexPath.row];
-            cell.textLabel.text = group.name;
-            cell.detailTextLabel.text = [NSString stringWithFormat:@"%li", (long)group.membersCount];
+            //cell.textLabel.text = group.name;
+            cell.textLabel.text = [NSString stringWithFormat:@"%@ (%i)",group.name,group.membersCount];
         } break;
     }
+    if ([selectValueSet containsObject:[NSString stringWithFormat:@"%d-%d",indexPath.section,indexPath.row]]) {
+        cell.accessoryType = UITableViewCellAccessoryCheckmark;
+    }else
+        cell.accessoryType = UITableViewCellAccessoryNone;
     
-
-	
-	return cell;
+    return cell;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-    if (indexPath.section == 0) {
-        cell.textLabel.text = @"Hide All Contacts";
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    NSString *index = [NSString stringWithFormat:@"%d-%d",indexPath.section,indexPath.row];
+    if ([selectValueSet containsObject:index]) {
+        [selectValueSet removeObject:index];
     }else{
-        if (YES) {
-            cell.accessoryType = UITableViewCellAccessoryCheckmark;
-        }else{
-            cell.accessoryType = UITableViewCellAccessoryNone;
-        }
+        [selectValueSet addObject:index];
     }
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF beginswith %@",[NSString stringWithFormat:@"%d",indexPath.section]];
+    [selectValueSet filterUsingPredicate:predicate];
+    [tableView reloadData];
 }
-
 #pragma mark -
 #pragma mark Barbutton action
 
@@ -190,10 +162,20 @@
 
 - (IBAction)doneAction:(id)sender
 {
-    if ([self.delegate respondsToSelector:@selector(tkGroupPickerController:didSelectGroup:)])
-        [self.delegate tkGroupPickerController:self didSelectGroup:nil];
-    else
-        [self dismissViewControllerAnimated:YES completion:nil];
+    NSMutableArray *groups = [NSMutableArray array];
+    for (NSString *index in selectValueSet) {
+        NSArray *array = [index componentsSeparatedByString:@"-"];
+        NSUInteger row = [[array objectAtIndex:1] integerValue];
+        if (![index hasPrefix:@"0"]) {
+            [groups addObject:[_groups objectAtIndex:row]];
+        }else
+            groups = nil;
+    }
+    
+    if ([self.delegate respondsToSelector:@selector(tkGroupPickerController:didSelectGroups:)])
+        [self.delegate tkGroupPickerController:self didSelectGroups:groups];
+    
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 #pragma mark -
@@ -204,12 +186,5 @@
     [super viewDidUnload];
     self.tableView = nil;
 }
-
-//- (void)dealloc
-//{
-//    [_groups release];
-//    [_tableView release];
-//	[super dealloc];
-//}
 
 @end

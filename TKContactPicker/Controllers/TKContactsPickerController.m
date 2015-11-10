@@ -4,13 +4,17 @@
 //
 //  Created by Jongtae Ahn on 12. 8. 31..
 //  Copyright (c) 2012년 TABKO Inc. All rights reserved.
-//
+//  Altered by Marco       on 15.11.  4..
+//  Copyright (c) 2015 ET Inc. All rights reserved.
 
-#import "TKPeoplePickerController.h"
+
+#import "TKPeoplePickerNavigationController.h"
 #import "TKContactsPickerController.h"
+#import "TKNoContactViewController.h"
 #import "NSString+TKUtilities.h"
 #import "UIImage+TKUtilities.h"
-#import "TKContactDetailViewController.h"
+#import "TKPhoneItem.h"
+
 
 @interface TKContactsPickerController(){
     TKNoContactViewController *_noContactController;
@@ -35,16 +39,27 @@
 - (void)reloadAddressBook
 {
     // Create addressbook data model
+    [_listContent removeAllObjects];
     NSMutableArray *contactsTemp = [NSMutableArray array];
-    ABAddressBookRef addressBooks = [(TKPeoplePickerController*)self.navigationController addressBook];
+    ABAddressBookRef addressBooks = [(TKPeoplePickerNavigationController*)self.navigationController addressBook];
     
     CFArrayRef allPeople;
     CFIndex peopleCount;
-    if (_group) {
-        self.title = _group.name;
-        ABRecordRef groupRecord = ABAddressBookGetGroupWithRecordID(addressBooks, (ABRecordID)_group.recordID);
-        allPeople = ABGroupCopyArrayOfAllMembers(groupRecord);
-        peopleCount = (CFIndex)_group.membersCount;
+    if (_groups) {
+        self.title = [_groups count]==1? [(TKGroup*)[_groups objectAtIndex:0] name]:@"Multi";
+        CFMutableArrayRef allPeopleM = CFArrayCreateMutable(NULL, 10, NULL);
+        peopleCount = 0;
+        for (TKGroup *group in _groups) {
+            if (group.membersCount>0) {
+                ABRecordRef groupRecord = ABAddressBookGetGroupWithRecordID(addressBooks, (ABRecordID)group.recordID);
+                CFArrayRef groupPeople = ABGroupCopyArrayOfAllMembers(groupRecord);
+                CFArrayAppendArray(allPeopleM, groupPeople, CFRangeMake(0, group.membersCount));
+                peopleCount += group.membersCount;
+                CFRelease(groupPeople);
+            }
+        }
+        allPeople = CFArrayCreateCopy(NULL, allPeopleM);
+        CFRelease(allPeopleM);
     } else {
         self.title = NSLocalizedString(@"All Contacts", nil);
         allPeople = ABAddressBookCopyArrayOfAllPeople(addressBooks);
@@ -64,27 +79,34 @@
         TKContact *contact = [[TKContact alloc] init];
         contact.tels = [NSMutableArray arrayWithCapacity:1];
         
-        /*
-         Save thumbnail image - performance decreasing
-         UIImage *personImage = nil;
-         if (person != nil && ABPersonHasImageData(person)) {
-         if ( &ABPersonCopyImageDataWithFormat != nil ) {
-         // iOS >= 4.1
-         CFDataRef contactThumbnailData = ABPersonCopyImageDataWithFormat(person, kABPersonImageFormatThumbnail);
-         personImage = [[UIImage imageWithData:(NSData*)contactThumbnailData] thumbnailImage:CGSizeMake(44, 44)];
-         CFRelease(contactThumbnailData);
-         CFDataRef contactImageData = ABPersonCopyImageDataWithFormat(person, kABPersonImageFormatOriginalSize);
-         CFRelease(contactImageData);
-         
-         } else {
-         // iOS < 4.1
-         CFDataRef contactImageData = ABPersonCopyImageData(person);
-         personImage = [[UIImage imageWithData:(NSData*)contactImageData] thumbnailImage:CGSizeMake(44, 44)];
-         CFRelease(contactImageData);
-         }
-         }
-         [addressBook setThumbnail:personImage];
-         */
+        //联系人头像
+        if(ABPersonHasImageData(contactRecord))
+        {
+            //            NSData * imageData = ( NSData *)ABPersonCopyImageData(record);
+            NSData * imageData = (__bridge NSData *)ABPersonCopyImageDataWithFormat(contactRecord,kABPersonImageFormatThumbnail);
+            UIImage * image = [[UIImage alloc] initWithData:imageData];
+            contact.thumbnail = image;
+        }
+         //Save thumbnail image - performance decreasing
+//         UIImage *personImage = nil;
+//         if (contactRecord != nil && ABPersonHasImageData(contactRecord)) {
+//         if ( &ABPersonCopyImageDataWithFormat != nil ) {
+//         // iOS >= 4.1
+//         CFDataRef contactThumbnailData = ABPersonCopyImageDataWithFormat(contactRecord, kABPersonImageFormatThumbnail);
+//         personImage = [[UIImage imageWithData:(__bridge NSData*)contactThumbnailData] thumbnailImage:CGSizeMake(44, 44)];
+//         CFRelease(contactThumbnailData);
+//         CFDataRef contactImageData = ABPersonCopyImageDataWithFormat(contactRecord, kABPersonImageFormatOriginalSize);
+//         CFRelease(contactImageData);
+//         
+//         } else {
+//         // iOS < 4.1
+//         CFDataRef contactImageData = ABPersonCopyImageData(contactRecord);
+//         personImage = [[UIImage imageWithData:(__bridge NSData*)contactImageData] thumbnailImage:CGSizeMake(44, 44)];
+//         CFRelease(contactImageData);
+//         }
+//         }
+//         [addressBook setThumbnail:personImage];
+        
         
         NSString *fullNameString = nil;
         NSString *firstString = (__bridge NSString *)abName;
@@ -191,7 +213,20 @@
     }
     
     for (TKContact *contact in contactsTemp) {
-        [(NSMutableArray *)[sectionArrays objectAtIndex:contact.sectionNumber] addObject:contact];
+        if ([self pickerStyle]==TKPeoplePickerNavigationControllerStyleAllPhones) {
+            for (NSDictionary *tel in contact.tels) {
+                if (((NSString*)[tel objectForKey:@"value"]).length>0) {
+                    TKContact *item = [[TKContact alloc]init];
+                    item.firstName = contact.firstName;
+                    item.lastName = contact.lastName;
+                    item.name = contact.name;
+                    item.tel = [tel objectForKey:@"value"];
+                    item.thumbnail = contact.thumbnail;
+                    [(NSMutableArray *)[sectionArrays objectAtIndex:contact.sectionNumber] addObject:item];
+                }
+            }
+        }else
+            [(NSMutableArray *)[sectionArrays objectAtIndex:contact.sectionNumber] addObject:contact];
     }
     
     for (NSMutableArray *sectionArray in sectionArrays) {
@@ -201,18 +236,29 @@
     [self.tableView reloadData];
 }
 
+
+
 #pragma mark -
 #pragma mark Initialization
 
-- (id)initWithGroup:(TKGroup*)group
+- (id)initWithGroups:(NSArray*)groups
 {
     if (self = [super initWithNibName:NSStringFromClass([self class]) bundle:nil]) {
-        self.group = group;
+        self.title = NSLocalizedString(@"All Contacts", nil);
+        self.groups = groups;
         _selectedCount = 0;
         _listContent = [NSMutableArray new];
         _filteredListContent = [NSMutableArray new];
     }
     return self;
+}
+
+- (BOOL)allowMultiSelection
+{
+    if ([self.delegate respondsToSelector:@selector(tkContactsPickerControllerAllowMultiSelection:)]) {
+        return [self.delegate tkContactsPickerControllerAllowMultiSelection:self];
+    }
+    return NO;
 }
 
 #pragma mark -
@@ -222,13 +268,25 @@
 {
 	[super viewDidLoad];
     
-    //self.edgesForExtendedLayout = UIRectEdgeAll;
-    self.automaticallyAdjustsScrollViewInsets = NO;
+    //self.edgesForExtendedLayout = UIRectEdgeNone;
+    self.automaticallyAdjustsScrollViewInsets = YES;
     [self.navigationItem setLeftBarButtonItem:nil];
-    [self.navigationItem setTitle:NSLocalizedString(@"Contacts", nil)];
+    [self.navigationItem setTitle:NSLocalizedString(@"All Contacts", nil)];
     
-    [self.navigationItem setRightBarButtonItem:[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self action:@selector(dismissAction:)]];
+    if ([self allowMultiSelection]) {
+        self.navigationItem.rightBarButtonItems = [NSArray arrayWithObjects:
+                                                   [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(doneAction:)],
+                                                   [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self action:@selector(dismissAction:)],
+                                                   nil];
+    }else{
+       [self.navigationItem setRightBarButtonItem:[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self action:@selector(dismissAction:)]];
+    }
     self.tableView.sectionIndexBackgroundColor = [UIColor clearColor];
+    [self.tableView registerNib:[UINib nibWithNibName:@"TKContactAllPhonesCell" bundle:nil] forCellReuseIdentifier:@"ContactAllPhonesCell"];
+    [self.tableView registerNib:[UINib nibWithNibName:@"TKContactListCell" bundle:nil] forCellReuseIdentifier:@"ContactListCell"];
+    [self.tableView registerNib:[UINib nibWithNibName:@"TKContactAllPhonesMultiCell" bundle:nil] forCellReuseIdentifier:@"ContactAllPhonesMultiCell"];
+    [self.tableView registerNib:[UINib nibWithNibName:@"TKContactListMultiCell" bundle:nil] forCellReuseIdentifier:@"ContactListMultiCell"];
+
 
     [self authenticateContact];
     
@@ -260,7 +318,7 @@
 
 - (void)authenticateContact
 {
-    _addressBook = [(TKPeoplePickerController*)self.navigationController addressBook];
+    _addressBook = [(TKPeoplePickerNavigationController*)self.navigationController addressBook];
     switch (ABAddressBookGetAuthorizationStatus()) {
         case kABAuthorizationStatusNotDetermined: {
             [self accessContactAuthenticated:NO];
@@ -290,9 +348,12 @@
 - (void)accessContactAuthenticated:(BOOL)authenticated
 {
     if (authenticated) {
-       self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Groups", nil) style:UIBarButtonItemStyleDone target:self action:@selector(showGroups:)];
+       self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Groups", nil) style:UIBarButtonItemStylePlain target:self action:@selector(showGroups:)];
         [_noContactController.view removeFromSuperview];
- 
+        
+        UIEdgeInsets insets = self.tableView.contentInset;
+        insets.top += 44;
+        self.tableView.contentInset = insets;
         self.tableView.hidden = NO;
 
         _searchBar = [[UISearchBar alloc]initWithFrame:CGRectZero];
@@ -303,11 +364,11 @@
         _tableView.translatesAutoresizingMaskIntoConstraints = NO;
         NSDictionary *views = @{@"s":_searchBar,@"t":_tableView,
                                 @"topLayoutGuide":self.topLayoutGuide,
-                                @"bottomLayoutGuide":self.bottomLayoutGuide
                                 };
         
         [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[s]|" options:0 metrics:nil views:views]];
-        [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[topLayoutGuide][s][t]" options:0 metrics:nil views:views]];
+        [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[topLayoutGuide][s]" options:0 metrics:nil views:views]];
+        [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[t]" options:0 metrics:nil views:views]];
         [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[t]|" options:0 metrics:nil views:views]];
         bottomConstraint = [NSLayoutConstraint constraintWithItem:self.view attribute:NSLayoutAttributeBottom relatedBy:NSLayoutRelationEqual toItem:self.tableView attribute:NSLayoutAttributeBottom multiplier:1 constant:0];
         [self.view addConstraint:bottomConstraint];
@@ -336,6 +397,36 @@
     }
 }
 
+// configure contact name
+- (void)configureCell:(UITableViewCell *)cell forContact:(TKContact*)contact {
+
+    UILabel *contactNameLabel = (UILabel *)[cell viewWithTag:101];
+    
+    if ([[contact.name stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length] > 0) {
+        contactNameLabel.font = [UIFont systemFontOfSize:cell.textLabel.font.pointSize];
+        NSString *stringToHightlight =
+        contact.lastName.length>0 ? contact.lastName : contact.name;
+        NSRange rangeToHightlight = [contact.name rangeOfString:stringToHightlight];
+        NSMutableAttributedString *attributedString = [
+                                                       [NSMutableAttributedString alloc] initWithString:contact.name];
+        
+        [attributedString beginEditing];
+        [attributedString addAttribute:NSFontAttributeName
+                                 value:[UIFont boldSystemFontOfSize:18]
+                                 range:rangeToHightlight];
+        [attributedString endEditing];
+        contactNameLabel.attributedText = attributedString;
+    }else{
+        contactNameLabel.font = [UIFont italicSystemFontOfSize:cell.textLabel.font.pointSize];
+        contactNameLabel.text = @"No Name";
+    }
+}
+
+- (TKPeoplePickerNavigationControllerStyle)pickerStyle
+{
+    TKPeoplePickerNavigationControllerStyle style = ((TKPeoplePickerNavigationController*)self.navigationController).pickerStyle;
+    return style;
+}
 
 
 #pragma mark -
@@ -392,6 +483,14 @@
     return [[_listContent objectAtIndex:section] count] ? tableView.sectionHeaderHeight : 0;
 }
 
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if (tableView == self.searchDisplayController.searchResultsTableView) {
+        return 44;
+    }else
+        return 67;
+}
+
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
 	if (tableView == self.searchDisplayController.searchResultsTableView) {
@@ -403,7 +502,24 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	static NSString *kCustomCellID = @"TKPeoplePickerControllerCell";
+	static NSString *kCustomCellID = nil;
+    TKPeoplePickerNavigationControllerStyle style = ((TKPeoplePickerNavigationController*)self.navigationController).pickerStyle;
+    if ([self allowMultiSelection]) {
+        if ( style== TKPeoplePickerNavigationControllerStyleAllPhones) {
+            kCustomCellID = @"ContactAllPhonesMultiCell";
+        }else if (style == TKPeoplePickerNavigationControllerStyleNormal){
+            kCustomCellID = @"ContactListMultiCell";
+        }
+    }else
+    {
+        if ( style== TKPeoplePickerNavigationControllerStyleAllPhones) {
+            kCustomCellID = @"ContactAllPhonesCell";
+        }else if (style == TKPeoplePickerNavigationControllerStyleNormal){
+            kCustomCellID = @"ContactListCell";
+        }
+
+    }
+    
 	UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:kCustomCellID];
 	if (cell == nil)
 	{
@@ -415,18 +531,43 @@
     if (tableView == self.searchDisplayController.searchResultsTableView){
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         contact = (TKContact *)[_filteredListContent objectAtIndex:indexPath.row];
+        cell.textLabel.tag = 101;
     }
 	else
+    {
         contact = (TKContact *)[[_listContent objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
-    
-    if ([[contact.name stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length] > 0) {
-        cell.textLabel.font = [UIFont boldSystemFontOfSize:cell.textLabel.font.pointSize];
-        cell.textLabel.text = contact.name;
-    } else {
-        cell.textLabel.font = [UIFont italicSystemFontOfSize:cell.textLabel.font.pointSize];
-        cell.textLabel.text = @"No Name";
+
+        if ([self allowMultiSelection]) {
+            //UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+            //[button setFrame:CGRectMake(30.0, 0.0, 28, 28)];
+            UIButton *button = (UIButton *)[cell viewWithTag:104];
+            [button setBackgroundImage:[UIImage imageNamed:@"icon-checkbox-unselected-25x25"] forState:UIControlStateNormal];
+            [button setBackgroundImage:[UIImage imageNamed:@"icon-checkbox-selected-green-25x25"] forState:UIControlStateSelected];
+            [button addTarget:self action:@selector(checkButtonTapped:event:) forControlEvents:UIControlEventTouchUpInside];
+            [button setSelected:contact.rowSelected];
+            //cell.accessoryView = button;
+            
+        }else{
+            cell.textLabel.tag = 101;
+            //cell.detailTextLabel.tag = 102;
+        }
+        
+        if (style == TKPeoplePickerNavigationControllerStyleAllPhones) {
+            UILabel *mobilePhoneNumberLabel = (UILabel *)[cell viewWithTag:102];
+            mobilePhoneNumberLabel.text = contact.tel;
+        }
+        
+        UIImageView *contactImage = (UIImageView *)[cell viewWithTag:103];
+        if(contact.thumbnail) {
+            contactImage.image = contact.thumbnail;
+        }else{
+            contactImage.image = [UIImage imageNamed:@"icon-avatar-60x60"];
+        }
+        contactImage.layer.masksToBounds = YES;
+        contactImage.layer.cornerRadius = 20;
+
     }
-		
+    [self configureCell:cell forContact:contact];
 	return cell;
 }
 
@@ -440,10 +581,46 @@
 	}
 	else {
         [self.tableView deselectRowAtIndexPath:indexPath animated:YES];
-        TKContactDetailViewController *detailViewController = [[TKContactDetailViewController alloc]initWithContact:[[_listContent objectAtIndex:indexPath.section] objectAtIndex:indexPath.row]];
-        [self.navigationController pushViewController:detailViewController animated:YES];
-	}
+
+        if ([self allowMultiSelection]) {
+            [self multipleContactTappedForRowWithIndexPath:indexPath];
+            return;
+        }
+        
+        if ([self.delegate respondsToSelector:@selector(tkContactsPickerController:shouldContinueAfterSelectingContact:)]) {
+            if ([self.delegate tkContactsPickerController:self shouldContinueAfterSelectingContact:[[_listContent objectAtIndex:indexPath.section] objectAtIndex:indexPath.row]]) {
+                TKContactDetailViewController *detailViewController = [[TKContactDetailViewController alloc]initWithContact:[[_listContent objectAtIndex:indexPath.section] objectAtIndex:indexPath.row]];
+                detailViewController.addressBook = _addressBook;
+                detailViewController.delegate = self;
+                [self.navigationController pushViewController:detailViewController animated:YES];
+                return;
+            }
+        }
+        if ([self.delegate respondsToSelector:@selector(tkContactsPickerController:didSelectContact:)]){
+            [self.delegate tkContactsPickerController:self didSelectContact:[[_listContent objectAtIndex:indexPath.section]objectAtIndex:indexPath.row]];
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+        });
+
+    }
 }
+
+- (void)tableView:(UITableView *)tableView accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath
+{
+	TKContact *contact = nil;
+
+	if (tableView == self.searchDisplayController.searchResultsTableView)
+		contact = (TKContact*)[_filteredListContent objectAtIndex:indexPath.row];
+	else
+        contact = (TKContact*)[[_listContent objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+
+    TKContactDetailViewController *detailViewController = [[TKContactDetailViewController alloc]initWithContact:contact];
+    detailViewController.addressBook = _addressBook;
+    detailViewController.delegate = self;
+    [self.navigationController pushViewController:detailViewController animated:YES];
+}
+
 
 
 - (void)checkButtonTapped:(id)sender event:(id)event
@@ -455,8 +632,27 @@
 	
 	if (indexPath != nil)
 	{
-		[self tableView:self.tableView accessoryButtonTappedForRowWithIndexPath:indexPath];
+		[self multipleContactTappedForRowWithIndexPath:indexPath];
 	}
+}
+
+- (void)multipleContactTappedForRowWithIndexPath:(NSIndexPath*)indexPath
+{
+    TKContact *contact = (TKContact*)[[_listContent objectAtIndex:indexPath.section] objectAtIndex:indexPath.row];
+    BOOL checked = !contact.rowSelected;
+    contact.rowSelected = checked;
+    
+    // Enabled rightButtonItem
+    if (checked) _selectedCount++;
+    else _selectedCount--;
+//    if (_selectedCount > 0)
+//        [self.navigationItem setRightBarButtonItem:[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(doneAction:)]];
+//    else
+//        [self.navigationItem setRightBarButtonItem:[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self action:@selector(dismissAction:)]];
+    
+    UITableViewCell *cell =[self.tableView cellForRowAtIndexPath:indexPath];
+    UIButton *button = (UIButton *)[cell viewWithTag:104];
+    [button setSelected:checked];
 }
 
 #pragma mark -
@@ -464,7 +660,7 @@
 - (void)showGroups:(id)sender
 {
     TKGroupPickerController *groupContactController = [[TKGroupPickerController alloc] initWithNibName:NSStringFromClass([TKGroupPickerController class]) bundle:nil];
-    groupContactController.addressbook =  [(TKPeoplePickerController*)self.navigationController addressBook];
+    groupContactController.addressbook =  [(TKPeoplePickerNavigationController*)self.navigationController addressBook];
     groupContactController.delegate = self;
     UINavigationController *navGroupController = [[UINavigationController alloc]initWithRootViewController:groupContactController];
     [self.navigationController presentViewController:navGroupController animated:YES completion:nil];
@@ -475,8 +671,22 @@
 {
     if ([self.delegate respondsToSelector:@selector(tkContactsPickerControllerDidCancel:)])
         [self.delegate tkContactsPickerControllerDidCancel:self];
-    else
-        [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (IBAction)doneAction:(id)sender
+{
+    if ([self.delegate respondsToSelector:@selector(tkContactsPickerController:didSelectContacts:)]) {
+        NSMutableArray *objects = [NSMutableArray new];
+        for (NSArray *section in _listContent) {
+            for (TKContact *contact in section)
+            {
+                if (contact.rowSelected)
+                    [objects addObject:contact];
+            }
+        }
+        [self.delegate tkContactsPickerController:self didSelectContacts:objects];
+        [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+    }
 }
 
 #pragma mark -
@@ -485,11 +695,6 @@
 - (void)searchBarTextDidBeginEditing:(UISearchBar *)_searchBar
 {
 	[self.searchDisplayController.searchBar setShowsCancelButton:YES];
-
-}
-
-- (void)searchBarTextDidEndEditing:(UISearchBar *)searchBar
-{
 
 }
 
@@ -502,8 +707,6 @@
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar
 {
     [searchBar resignFirstResponder];
-	//[self.searchDisplayController setActive:NO animated:YES];
-	//[self.tableView reloadData];
 }
 
 #pragma mark -
@@ -545,28 +748,6 @@
 #pragma mark -
 #pragma mark UISearchDisplayControllerDelegate
 
-//- (void)searchDisplayControllerWillBeginSearch:(UISearchDisplayController *)controller
-//{
-//    CGRect frame = self.searchBar.frame;
-//    frame.origin.y = 20;
-//    [UIView beginAnimations:@"changeSearchBarFrame"context:NULL];
-//    [UIView setAnimationDuration:0.1];
-//    [UIView setAnimationCurve:UIViewAnimationCurveEaseIn];
-//    self.searchBar.frame = frame;
-//    [UIView commitAnimations];
-//}
-//
-//- (void)searchDisplayControllerWillEndSearch:(UISearchDisplayController *)controller
-//{
-//    CGRect frame = self.searchBar.frame;
-//    frame.origin.y = 64;
-//    [UIView beginAnimations:@"changeSearchBarFrame"context:NULL];
-//    [UIView setAnimationDuration:0.1];
-//    [UIView setAnimationCurve:UIViewAnimationCurveEaseIn];
-//    self.searchBar.frame = frame;
-//    [UIView commitAnimations];
-//}
-
 - (void)searchDisplayController:(UISearchDisplayController *)controller willShowSearchResultsTableView:(UITableView *)tableView
 {
     [tableView setContentInset:UIEdgeInsetsZero];
@@ -590,6 +771,28 @@
     
     return YES;
 }
+
+#pragma mark -
+#pragma mark TKContactDetailViewController Delegate method
+- (void)tkContactDetailViewController:(TKContactDetailViewController *)peoplePicker
+                      didSelectPerson:(TKContact*)person
+                             property:(ABPropertyID)property
+                           identifier:(ABMultiValueIdentifier)identifier
+{
+    if ([self.delegate respondsToSelector:@selector(tkContactsPickerController:didSelectContact:property:identifier:)]) {
+        [self.delegate tkContactsPickerController:self didSelectContact:person property:property identifier:identifier];
+    }
+}
+
+#pragma mark -
+#pragma mark TKGroupPickerController Delegate method
+- (void)tkGroupPickerController:(TKGroupPickerController *)picker didSelectGroups:(NSArray *)groups
+{
+    _groups = groups;
+    [self reloadAddressBook];
+}
+
+
 
 #pragma mark -
 #pragma mark Keyboard notification

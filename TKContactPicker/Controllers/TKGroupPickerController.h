@@ -4,16 +4,17 @@
 //
 //  Created by Jongtae Ahn on 12. 9. 1..
 //  Copyright (c) 2012년 TABKO Inc. All rights reserved.
-//
+//  Altered by Marco       on 15. 11.2..
+//  Copyright (c) 2015 ET Inc. All rights reserved.
+
 
 #import <AddressBook/AddressBook.h>
-#import <AddressBookUI/AddressBookUI.h>
 #import "TKGroup.h"
 
 @class TKGroupPickerController;
 @protocol TKGroupPickerControllerDelegate <NSObject>
 @required
-- (void)tkGroupPickerController:(TKGroupPickerController*)picker didSelectGroup:(TKGroup*)group;
+- (void)tkGroupPickerController:(TKGroupPickerController*)picker didSelectGroups:(NSArray*)groups;
 @end
 
 @interface TKGroupPickerController : UIViewController <UIAlertViewDelegate, UIActionSheetDelegate> {

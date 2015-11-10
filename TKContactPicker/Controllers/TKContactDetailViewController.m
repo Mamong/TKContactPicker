@@ -81,11 +81,21 @@
 {
     static NSString *identifier = @"phonecell";
     TKContactCell *cell = (TKContactCell*)[tableView dequeueReusableCellWithIdentifier:identifier forIndexPath:indexPath];
-    //cell.separatorInset = UIEdgeInsetsMake(<#CGFloat top#>, <#CGFloat left#>, <#CGFloat bottom#>, <#CGFloat right#>)
-    //NSAttributedString *attString = [NSAttributedString alloc]initWithString:[[self.displayedPerson.tels objectAtIndex:indexPath.row]valueForKey:@"label"] attributes:<#(nullable NSDictionary<NSString *,id> *)#>
     cell.labelTextLabel.text = [[self.displayedContact.tels objectAtIndex:indexPath.row]valueForKey:@"label"];
     cell.phoneTextLabel.text = [[self.displayedContact.tels objectAtIndex:indexPath.row]valueForKey:@"value"];
     return cell;
+}
+
+// support kABPersonPhoneProperty only
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if ([self.delegate respondsToSelector:@selector(tkContactDetailViewController:didSelectPerson:property:identifier:)]) {
+        ABRecordRef contactRecord = ABAddressBookGetPersonWithRecordID(_addressBook, self.displayedContact.recordID);
+        ABMultiValueRef valuesRef = ABRecordCopyValue(contactRecord, kABPersonPhoneProperty);
+        ABMultiValueIdentifier identifier = ABMultiValueGetIdentifierAtIndex(valuesRef,indexPath.row);
+        [self.delegate tkContactDetailViewController:self didSelectPerson:self.displayedContact property:kABPersonPhoneProperty identifier:identifier];
+        CFRelease(valuesRef);
+    }
 }
 
 

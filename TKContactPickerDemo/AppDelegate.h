@@ -7,13 +7,15 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "TKPeoplePickerNavigationController.h"
 
 @class MainViewController;
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate>
+@interface AppDelegate : UIResponder <UIApplicationDelegate,TKPeoplePickerNavigationControllerDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
 @property (strong, nonatomic) UINavigationController *navigationController;
 @property (strong, nonatomic) MainViewController *mainViewController;
+@property (strong, nonatomic) UITabBarController *tabBarController;
 
 @end

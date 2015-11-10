@@ -16,20 +16,20 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="This app does not have access to your contacts. " textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" preferredMaxLayoutWidth="270" translatesAutoresizingMaskIntoConstraints="NO" id="3">
-                    <rect key="frame" x="31" y="302" width="259" height="38.5"/>
+                    <rect key="frame" x="31" y="266.5" width="259" height="38.5"/>
                     <fontDescription key="fontDescription" type="boldSystem" pointSize="16"/>
                     <color key="textColor" red="0.2128742773" green="0.24627294450000001" blue="0.31493043900000001" alpha="1" colorSpace="calibratedRGB"/>
                     <nil key="highlightedColor"/>
                 </label>
                 <imageView userInteractionEnabled="NO" contentMode="scaleToFill" image="blankPrivacy.png" translatesAutoresizingMaskIntoConstraints="NO" id="7">
-                    <rect key="frame" x="113" y="166" width="95" height="128"/>
+                    <rect key="frame" x="113" y="130" width="95" height="128"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="128" id="Zf4-mw-0Na"/>
                         <constraint firstAttribute="width" constant="95" id="fhQ-8E-KVc"/>
                     </constraints>
                 </imageView>
                 <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" text="You can enable access in Privacy Settings." textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" preferredMaxLayoutWidth="304" translatesAutoresizingMaskIntoConstraints="NO" id="5">
-                    <rect key="frame" x="8" y="348" width="304" height="18"/>
+                    <rect key="frame" x="8" y="312" width="304" height="18"/>
                     <fontDescription key="fontDescription" type="system" pointSize="15"/>
                     <color key="textColor" red="0.4222632482" green="0.53155784510000004" blue="0.64273703100000001" alpha="1" colorSpace="calibratedRGB"/>
                     <nil key="highlightedColor"/>
@@ -42,7 +42,7 @@
                 <constraint firstAttribute="trailing" secondItem="5" secondAttribute="trailing" constant="8" id="o39-Zr-hjY"/>
                 <constraint firstItem="3" firstAttribute="centerX" secondItem="7" secondAttribute="centerX" id="r2x-0h-bpl"/>
                 <constraint firstItem="5" firstAttribute="top" secondItem="3" secondAttribute="bottom" constant="7.5" id="vXx-oG-XJ0"/>
-                <constraint firstItem="7" firstAttribute="centerY" secondItem="1" secondAttribute="centerY" id="wMe-ke-gQx"/>
+                <constraint firstItem="7" firstAttribute="centerY" secondItem="1" secondAttribute="centerY" constant="-36" id="wMe-ke-gQx"/>
                 <constraint firstItem="5" firstAttribute="leading" secondItem="1" secondAttribute="leading" constant="8" id="xjF-ci-DGp"/>
             </constraints>
             <simulatedStatusBarMetrics key="simulatedStatusBarMetrics"/>

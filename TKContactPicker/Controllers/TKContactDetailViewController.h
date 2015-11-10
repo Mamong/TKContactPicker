@@ -7,11 +7,24 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <AddressBook/AddressBook.h>
 #import "TKContact.h"
+
+
+@class TKContactDetailViewController;
+@protocol TKContactDetailViewControllerDelegate <NSObject>
+
+- (void)tkContactDetailViewController:(TKContactDetailViewController *)peoplePicker
+                   didSelectPerson:(TKContact*)person
+                          property:(ABPropertyID)property
+                        identifier:(ABMultiValueIdentifier)identifier;
+
+@end
 
 @interface TKContactDetailViewController : UIViewController<UITableViewDataSource,UITableViewDelegate>
 
-
+@property (nonatomic, assign) ABAddressBookRef addressBook;
+@property(weak,nonatomic)id<TKContactDetailViewControllerDelegate> delegate;
 @property(retain,nonatomic) IBOutlet UITableView *tableView;
 @property(retain,nonatomic) TKContact *displayedContact;
 //@property(retain,nonatomic) NSArray   *displayedProperties;

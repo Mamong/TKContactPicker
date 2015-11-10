@@ -6,9 +6,9 @@
 //  Copyright (c) 2012년 TABKO Inc. All rights reserved.
 //
 
-#import "TKPeoplePickerController.h"
+#import "TKPeoplePickerNavigationController.h"
 
-@interface MainViewController : UIViewController <UINavigationControllerDelegate, TKPeoplePickerControllerDelegate>
+@interface MainViewController : UIViewController <UINavigationControllerDelegate, TKPeoplePickerNavigationControllerDelegate>
 
 @property (nonatomic, retain) IBOutlet UIScrollView *scrollView;
 

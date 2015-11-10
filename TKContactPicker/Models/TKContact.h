@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <AddressBook/AddressBook.h>
 
 @interface TKContact : NSObject {
     NSInteger sectionNumber;
@@ -28,7 +29,7 @@
 @property BOOL rowSelected;
 @property (nonatomic, retain) NSString *name;
 @property (nonatomic, retain) NSString *email;
-//@property (nonatomic, retain) NSString *tel;
+@property (nonatomic, retain) NSString *tel;
 @property (nonatomic, retain) NSMutableArray *tels;
 @property (nonatomic, retain) UIImage *thumbnail;
 @property (nonatomic, retain) NSString *lastName;
