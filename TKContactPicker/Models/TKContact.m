@@ -9,7 +9,7 @@
 #import "TKContact.h"
 
 @implementation TKContact
-@synthesize name, email,tel, tels, thumbnail, recordID, sectionNumber, rowSelected, lastName, firstName;
+@synthesize name, email,tel,telLabel, tels, thumbnail, recordID, sectionNumber, rowSelected, lastName, firstName;
 
 //- (void)dealloc
 //{

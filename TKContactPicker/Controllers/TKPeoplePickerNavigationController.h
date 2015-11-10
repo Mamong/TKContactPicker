@@ -34,6 +34,7 @@ typedef NS_ENUM(NSUInteger, TKPeoplePickerNavigationControllerStyle) {
 // Temp API, will replaced by tkPeoplePickerNavigationController:didSelectContactProperty:
 - (void)tkPeoplePickerNavigationController:(TKPeoplePickerNavigationController *)peoplePicker
                           didSelectContact:(TKContact *)contact
+                                     index:(NSInteger)index
                                   property:(ABPropertyID)property
                                 identifier:(ABMultiValueIdentifier)identifier;
 //

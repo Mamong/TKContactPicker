@@ -130,11 +130,12 @@
 
 - (void)tkContactsPickerController:(TKContactsPickerController *)peoplePicker
                    didSelectContact:(TKContact*)person
+                             index:(NSInteger)index
                           property:(ABPropertyID)property
                         identifier:(ABMultiValueIdentifier)identifier
 {
-    if ([self.peoplePickerDelegate respondsToSelector:@selector(tkPeoplePickerNavigationController:didSelectContact:property:identifier:)]) {
-        [self.peoplePickerDelegate tkPeoplePickerNavigationController:self didSelectContact:person property:property identifier:identifier];
+    if ([self.peoplePickerDelegate respondsToSelector:@selector(tkPeoplePickerNavigationController:didSelectContact:index:property:identifier:)]) {
+        [self.peoplePickerDelegate tkPeoplePickerNavigationController:self didSelectContact:person index:index property:property identifier:identifier];
     }
 }
 

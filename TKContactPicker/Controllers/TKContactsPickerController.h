@@ -22,6 +22,7 @@
 
 - (void)tkContactsPickerController:(TKContactsPickerController *)peoplePicker
                            didSelectContact:(TKContact*)contact
+                                     index:(NSInteger)index
                                   property:(ABPropertyID)property
                                 identifier:(ABMultiValueIdentifier)identifier;
 

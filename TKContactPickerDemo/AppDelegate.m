@@ -27,14 +27,36 @@
     return YES;
 }
 
-- (void)tkPeoplePickerNavigationController:(TKPeoplePickerNavigationController *)peoplePicker didSelectContact:(TKContact *)contact
-{
-    NSLog(@"select contact");
-}
+//- (void)tkPeoplePickerNavigationController:(TKPeoplePickerNavigationController *)peoplePicker didSelectContact:(TKContact *)contact
+//{
+//    NSLog(@"select contact");
+//}
 //
--(void)tkPeoplePickerNavigationController:(TKPeoplePickerNavigationController *)peoplePicker didSelectContacts:(NSArray *)contacts
+//-(void)tkPeoplePickerNavigationController:(TKPeoplePickerNavigationController *)peoplePicker didSelectContacts:(NSArray *)contacts
+//{
+//    NSLog(@"select contacts");
+//}
+
+- (void)tkPeoplePickerNavigationController:(TKPeoplePickerNavigationController *)peoplePicker didSelectContact:(TKContact *)contact index:(NSInteger)index property:(ABPropertyID)property identifier:(ABMultiValueIdentifier)identifier
 {
-    NSLog(@"select contacts");
+    
+    // FIXME duplicate code from FavoritesListController.personViewController
+    if (kABPersonPhoneProperty == property)
+    {
+
+        NSString* fullName = contact.name;
+        NSString *label = contact.telLabel;
+        NSString *phone = contact.tel;
+        if (!label) {
+            NSDictionary *tel = [contact.tels objectAtIndex:index];
+            label = [tel objectForKey:@"label"];
+            phone = [tel objectForKey:@"value"];
+        }
+        NSLog(@"name:%@,label:(%@)phone:%@",fullName,label,phone);
+    }
+    
+    
 }
+
 
 @end

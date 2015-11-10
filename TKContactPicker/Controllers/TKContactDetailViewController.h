@@ -16,6 +16,7 @@
 
 - (void)tkContactDetailViewController:(TKContactDetailViewController *)peoplePicker
                    didSelectPerson:(TKContact*)person
+                                index:(NSInteger)index
                           property:(ABPropertyID)property
                         identifier:(ABMultiValueIdentifier)identifier;
 

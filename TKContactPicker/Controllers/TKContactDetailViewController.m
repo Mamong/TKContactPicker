@@ -68,6 +68,9 @@
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
+    if (self.displayedContact.tel) {
+        return 1;
+    }
     return [self.displayedContact.tels count];
 }
 
@@ -81,20 +84,31 @@
 {
     static NSString *identifier = @"phonecell";
     TKContactCell *cell = (TKContactCell*)[tableView dequeueReusableCellWithIdentifier:identifier forIndexPath:indexPath];
-    cell.labelTextLabel.text = [[self.displayedContact.tels objectAtIndex:indexPath.row]valueForKey:@"label"];
-    cell.phoneTextLabel.text = [[self.displayedContact.tels objectAtIndex:indexPath.row]valueForKey:@"value"];
+    if (self.displayedContact.tel) {
+        cell.labelTextLabel.text = self.displayedContact.telLabel;
+        cell.phoneTextLabel.text = self.displayedContact.tel;
+    }else{
+        cell.labelTextLabel.text = [[self.displayedContact.tels objectAtIndex:indexPath.row]valueForKey:@"label"];
+        cell.phoneTextLabel.text = [[self.displayedContact.tels objectAtIndex:indexPath.row]valueForKey:@"value"];
+    }
     return cell;
 }
 
 // support kABPersonPhoneProperty only
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    if ([self.delegate respondsToSelector:@selector(tkContactDetailViewController:didSelectPerson:property:identifier:)]) {
-        ABRecordRef contactRecord = ABAddressBookGetPersonWithRecordID(_addressBook, self.displayedContact.recordID);
-        ABMultiValueRef valuesRef = ABRecordCopyValue(contactRecord, kABPersonPhoneProperty);
-        ABMultiValueIdentifier identifier = ABMultiValueGetIdentifierAtIndex(valuesRef,indexPath.row);
-        [self.delegate tkContactDetailViewController:self didSelectPerson:self.displayedContact property:kABPersonPhoneProperty identifier:identifier];
-        CFRelease(valuesRef);
+    if ([self.delegate respondsToSelector:@selector(tkContactDetailViewController:didSelectPerson:index:property:identifier:)]) {
+        if (self.displayedContact.recordID != 0) {
+            ABRecordRef contactRecord = ABAddressBookGetPersonWithRecordID(_addressBook, self.displayedContact.recordID);
+            ABMultiValueRef valuesRef = ABRecordCopyValue(contactRecord, kABPersonPhoneProperty);
+            ABMultiValueIdentifier identifier = ABMultiValueGetIdentifierAtIndex(valuesRef,indexPath.row);
+            [self.delegate tkContactDetailViewController:self didSelectPerson:self.displayedContact index:indexPath.row property:kABPersonPhoneProperty identifier:identifier];
+            CFRelease(valuesRef);
+
+        }else
+        {
+            [self.delegate tkContactDetailViewController:self didSelectPerson:self.displayedContact index:indexPath.row property:kABPersonPhoneProperty identifier:-1];
+        }
     }
 }
 

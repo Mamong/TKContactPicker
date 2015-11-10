@@ -221,6 +221,7 @@
                     item.lastName = contact.lastName;
                     item.name = contact.name;
                     item.tel = [tel objectForKey:@"value"];
+                    item.telLabel = [tel objectForKey:@"label"];
                     item.thumbnail = contact.thumbnail;
                     [(NSMutableArray *)[sectionArrays objectAtIndex:contact.sectionNumber] addObject:item];
                 }
@@ -776,11 +777,12 @@
 #pragma mark TKContactDetailViewController Delegate method
 - (void)tkContactDetailViewController:(TKContactDetailViewController *)peoplePicker
                       didSelectPerson:(TKContact*)person
+                                index:(NSInteger)index
                              property:(ABPropertyID)property
                            identifier:(ABMultiValueIdentifier)identifier
 {
-    if ([self.delegate respondsToSelector:@selector(tkContactsPickerController:didSelectContact:property:identifier:)]) {
-        [self.delegate tkContactsPickerController:self didSelectContact:person property:property identifier:identifier];
+    if ([self.delegate respondsToSelector:@selector(tkContactsPickerController:didSelectContact:index:property:identifier:)]) {
+        [self.delegate tkContactsPickerController:self didSelectContact:person index:index property:property identifier:identifier];
     }
 }
 

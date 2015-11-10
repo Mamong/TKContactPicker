@@ -136,41 +136,48 @@
     NSLog(@"select contacts");
 }
 
-- (void)tkPeoplePickerNavigationController:(TKPeoplePickerNavigationController *)peoplePicker didSelectContact:(TKContact *)contact property:(ABPropertyID)property identifier:(ABMultiValueIdentifier)identifier
+- (void)tkPeoplePickerNavigationController:(TKPeoplePickerNavigationController *)peoplePicker didSelectContact:(TKContact *)contact index:(NSInteger)index property:(ABPropertyID)property identifier:(ABMultiValueIdentifier)identifier
 {
-    CFTypeRef multiValue;
-    CFIndex valueIdx;
-    ABRecordRef person = ABAddressBookGetPersonWithRecordID(peoplePicker.addressBook, (int)contact.recordID);
-
+    
     // FIXME duplicate code from FavoritesListController.personViewController
     if (kABPersonPhoneProperty == property)
     {
-        multiValue = ABRecordCopyValue(person, property);
-        ABMultiValueRef phoneLabels = ABRecordCopyValue(person, kABPersonPhoneProperty);
-        valueIdx = ABMultiValueGetIndexForIdentifier(multiValue,identifier);
-        NSString *phoneNumber = (__bridge_transfer NSString *)ABMultiValueCopyValueAtIndex(multiValue, valueIdx);
-        NSString* _firstName = (__bridge_transfer NSString *) ABRecordCopyValue(person, kABPersonFirstNameProperty);
-        NSString* _lastName = (__bridge_transfer NSString *) ABRecordCopyValue(person, kABPersonLastNameProperty);
-        NSString* fullName = @"";
-        
-        if (_firstName == nil) {
-            fullName = _lastName;
+        NSString* fullName = contact.name;
+        NSString *label = contact.telLabel;
+        NSString *phone = contact.tel;
+        if (!label) {
+            CFTypeRef multiValue;
+            CFIndex valueIdx;
+            ABRecordRef person = ABAddressBookGetPersonWithRecordID(peoplePicker.addressBook, (int)contact.recordID);
+            
+            multiValue = ABRecordCopyValue(person, property);
+            ABMultiValueRef phoneLabels = ABRecordCopyValue(person, kABPersonPhoneProperty);
+            valueIdx = ABMultiValueGetIndexForIdentifier(multiValue,identifier);
+            phone = (__bridge_transfer NSString *)ABMultiValueCopyValueAtIndex(multiValue, valueIdx);
+            NSString* _firstName = (__bridge_transfer NSString *) ABRecordCopyValue(person, kABPersonFirstNameProperty);
+            NSString* _lastName = (__bridge_transfer NSString *) ABRecordCopyValue(person, kABPersonLastNameProperty);
+            
+            if (_firstName == nil) {
+                fullName = _lastName;
+            }
+            else if (_lastName == nil) {
+                fullName = _firstName;
+            }
+            else {
+                fullName = [NSString stringWithFormat:@"%@ %@", _firstName, _lastName];
+            }
+            
+            CFStringRef locLabel = ABMultiValueCopyLabelAtIndex(phoneLabels, valueIdx);
+            label = (__bridge_transfer NSString*) ABAddressBookCopyLocalizedLabel(locLabel);
+            fullName = [NSString stringWithFormat:@"%@ %@", fullName, label];
+            
+            CFRelease(locLabel);
+            CFRelease(phoneLabels);
+            CFRelease(multiValue);
         }
-        else if (_lastName == nil) {
-            fullName = _firstName;
-        }
-        else {
-            fullName = [NSString stringWithFormat:@"%@ %@", _firstName, _lastName];
-        }
-        
-        CFStringRef locLabel = ABMultiValueCopyLabelAtIndex(phoneLabels, valueIdx);
-        NSString *_phoneLabel =(__bridge_transfer NSString*) ABAddressBookCopyLocalizedLabel(locLabel);
-        fullName = [NSString stringWithFormat:@"%@ %@", fullName, _phoneLabel];
-        NSLog(@"name:%@ phone:%@",fullName,phoneNumber);
-        
-        CFRelease(locLabel);
-        CFRelease(phoneLabels);
-        CFRelease(multiValue);
+        NSLog(@"name:%@,label:(%@)phone:%@",fullName,label,phone);
+
+   
     }
     
 
