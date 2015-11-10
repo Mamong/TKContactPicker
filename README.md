@@ -1,10 +1,9 @@
 Feature
 ====================
-A system like contact custom implementation based on Jongtae Ahn multi-selection version
+A custom  contact implementation based on Jongtae Ahn multi-selection version
 
-Simple contacts multi picker for iOS (Non ARC).
+Simple contacts multi/single picker for iOS (ARC).
 This is customizable, simple, fast controller for contacts.
-iOS6 Update patch (Privacy settings & Retina 4inch)
 
 <ul>
     <li>Supported iOS7</li>
@@ -21,15 +20,16 @@ Usage
 
 As shown below where you want to put your code
 <pre>
-TKPeoplePickerController *controller = [[[TKPeoplePickerController alloc] initPeoplePicker] autorelease];
-controller.actionDelegate = self;
+TKPeoplePickerNavigationController *controller = [[TKPeoplePickerNavigationController alloc] init];
+controller.peoplePickerDelegate = self;
+controller.pickerStyle = TKPeoplePickerNavigationControllerStyleAllPhones;
 controller.modalPresentationStyle = UIModalPresentationFullScreen;
 [self presentViewController:controller animated:YES completion:nil];
 </pre>
 
 Delegate, using the contact information processing
 <pre>
-- (void)tkPeoplePickerController:(TKPeoplePickerController*)picker didFinishPickingDataWithInfo:(NSArray*)contacts;
+- (void)tkPeoplePickerController:(TKPeoplePickerController*)picker didSelectContacts:(NSArray*)contacts;
 - (void)tkPeoplePickerControllerDidCancel:(TKPeoplePickerController*)picker;
 </pre>
 
@@ -61,14 +61,6 @@ THE SOFTWARE.
 
 ====================
 
-Our works
-====================
-
-<a href="http://hapsee.com" target="_blank">Than Happiness through the iLife!</a>
-
-<img src="http://hapsee.com/wp-content/uploads/2012/09/Home-Qnote-Icon.png" alt="Qnote" /> &nbsp; <img src="http://hapsee.com/wp-content/uploads/2012/09/Home-PicTok-Icon.png" alt="PicTok" /> &nbsp; <img src="http://hapsee.com/wp-content/uploads/2012/09/Home-FotoCookie-Icon.png" alt="FotoCookie" /> &nbsp; <img src="http://hapsee.com/wp-content/uploads/2012/09/Home-ThumbPlus-Icon.png" alt="Thumb+" />
-
-====================
 
 ScreenShot
 ====================
