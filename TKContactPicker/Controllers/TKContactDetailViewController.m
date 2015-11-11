@@ -43,9 +43,22 @@
 - (UIView*)headerView
 {
     UIView *backView = [[UIView alloc]initWithFrame:CGRectMake(0, 0, self.tableView.frame.size.width, 100)];
-    UILabel *label = [[UILabel alloc]initWithFrame:CGRectMake(35, 26, self.tableView.frame.size.width-35, 30)];
+    UIImageView *contactImage = [[UIImageView alloc]initWithFrame:CGRectMake(20, 10, 60, 60)];
+    if(self.displayedContact.thumbnail) {
+        contactImage.image = self.displayedContact.thumbnail;
+    }else{
+        contactImage.image = [UIImage imageNamed:@"icon-avatar-60x60"];
+    }
+    contactImage.layer.masksToBounds = YES;
+    contactImage.layer.cornerRadius = 30;
+
+    
+    
+    UILabel *label = [[UILabel alloc]initWithFrame:CGRectMake(100, 26, self.tableView.frame.size.width-75, 30)];
     label.font = [UIFont boldSystemFontOfSize:20];
     label.text = self.displayedContact.name;
+    
+    [backView addSubview:contactImage];
     [backView addSubview:label];
     return backView;
 }

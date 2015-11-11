@@ -489,7 +489,7 @@
     if (tableView == self.searchDisplayController.searchResultsTableView) {
         return 44;
     }else
-        return 67;
+        return 44;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
@@ -558,14 +558,14 @@
             mobilePhoneNumberLabel.text = contact.tel;
         }
         
-        UIImageView *contactImage = (UIImageView *)[cell viewWithTag:103];
-        if(contact.thumbnail) {
-            contactImage.image = contact.thumbnail;
-        }else{
-            contactImage.image = [UIImage imageNamed:@"icon-avatar-60x60"];
-        }
-        contactImage.layer.masksToBounds = YES;
-        contactImage.layer.cornerRadius = 20;
+//        UIImageView *contactImage = (UIImageView *)[cell viewWithTag:103];
+//        if(contact.thumbnail) {
+//            contactImage.image = contact.thumbnail;
+//        }else{
+//            contactImage.image = [UIImage imageNamed:@"icon-avatar-60x60"];
+//        }
+//        contactImage.layer.masksToBounds = YES;
+//        contactImage.layer.cornerRadius = 20;
 
     }
     [self configureCell:cell forContact:contact];
@@ -686,7 +686,9 @@
             }
         }
         [self.delegate tkContactsPickerController:self didSelectContacts:objects];
-        [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+        });
     }
 }
 

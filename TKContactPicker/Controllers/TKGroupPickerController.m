@@ -175,7 +175,9 @@
     if ([self.delegate respondsToSelector:@selector(tkGroupPickerController:didSelectGroups:)])
         [self.delegate tkGroupPickerController:self didSelectGroups:groups];
     
-    [self dismissViewControllerAnimated:YES completion:nil];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+    });
 }
 
 #pragma mark -
